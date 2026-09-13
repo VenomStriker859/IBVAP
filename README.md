@@ -1,4 +1,4 @@
-# IBVAP – Intelligent Battlefield Video Analysis Platform
+# IBVAP – Intelligent Border Video Analysis Platform
 
 <p align="center">
   <b>AI-Powered Video Surveillance and Analysis Platform</b>
