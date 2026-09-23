@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBVAP — Intelligent Border Video Analytics Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ibvap-styles.css">
+
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-brand"><span class="dot"></span><span>IBVAP</span></div>
+  <div class="nav-links">
+    <a href="#home">Home</a>
+    <a href="#about">About Us</a>
+    <a href="#monitor">Live Monitoring</a>
+    <a href="#reports">Reports</a>
+    <a href="#team">The Team</a>
+    <a href="#contact">Contact Us</a>
+  </div>
+  <button class="nav-login" id="openLogin">Login</button>
+  <button class="nav-burger" id="navBurger" aria-label="menu" aria-expanded="false"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-grain"></div>
+  <div class="hero-frame"></div>
+  <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+  <div class="hero-content">
+    <h1 class="hero-word">IBVAP</h1>
+    <div class="hero-full">Intelligent Border Video Analytics Platform</div>
+    <p class="hero-tag">Turning existing border CCTV infrastructure into an AI-driven surveillance network — no proprietary hardware required.</p>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem-hero" id="about">
+  <div class="problem-bg"></div>
+  <div class="problem-circuit"></div>
+  <div class="wrap problem-inner">
+    <div class="stamp">Problem Statement</div>
+    <div class="problem-grid">
+      <div>
+        <h2 class="pop-heading">
+          <span class="line"><span>IBVAP</span></span>
+          <span class="line"><span>Background</span></span>
+        </h2>
+        <p style="color:var(--sage); font-family:'JetBrains Mono',monospace; font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase;">Why this platform exists</p>
+      </div>
+      <div class="pop-copy">
+        <p>CCTV systems mainly record and display video, requiring continuous human monitoring and making it difficult to detect every security incident.
+          <p>Intelligent features like intrusion detection, object tracking, facial recognition, and ANPR often depend on costly specialised hardware and proprietary systems.</p>
+          <p>This makes intelligent surveillance expensive and difficult to scale, especially across remote and challenging border locations.</p>
+          <p>There is a need for a cost-effective, software-based AI solution that can use existing CCTV cameras to detect, track, analyse, and alert security forces about potential threats in real time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section class="dossier" style="padding-top:0;">
+  <div class="wrap">
+    <div class="stamp">Proposed Solution</div>
+    <div class="dossier-head">
+      <span class="dossier-num">02</span>
+      <h2 class="dossier-title">What IBVAP does</h2>
+    </div>
+    <div class="split">
+      <div>
+        <p>IBVAP is an AI-driven software platform that converts existing CCTV infrastructure into an intelligent surveillance network — <strong>without</strong> requiring dedicated FRS, ANPR, or smart-camera hardware.</p>
+        <p>The platform ingests live video streams from standard IP-based CCTV cameras and runs real-time video analytics using computer vision and machine learning, directly on top of the feeds that are already running.</p>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <p>Everything the system detects — a person crossing a virtual fence line, a vehicle plate, movement after dark — becomes a logged, timestamped, actionable event instead of a frame someone has to notice manually.</p>
+        <p>Built to be cost-effective, scalable, and deployable across remote border locations and strategic installations.</p>
+      </div>
+    </div>
+
+    <div class="cap-grid">
+      <div class="cap-tile"><span class="idx">01</span><h4>Human detection &amp; tracking</h4><p>Follows individuals across overlapping camera zones in real time.</p></div>
+      <div class="cap-tile"><span class="idx">02</span><h4>Vehicle detection &amp; classification</h4><p>Identifies vehicle type and movement along border roads.</p></div>
+      <div class="cap-tile"><span class="idx">03</span><h4>Face detection</h4><p>Flags and logs faces in frame for review.</p></div>
+      <div class="cap-tile"><span class="idx">04</span><h4>ANPR</h4><p>Automatic number plate recognition on passing vehicles.</p></div>
+      <div class="cap-tile"><span class="idx">05</span><h4>Virtual fence intrusion</h4><p>Raises an alert the instant a defined boundary line is crossed.</p></div>
+      <div class="cap-tile"><span class="idx">06</span><h4>Suspicious activity detection</h4><p>Flags loitering, unusual movement patterns and behaviour anomalies.</p></div>
+      <div class="cap-tile"><span class="idx">07</span><h4>Night-time movement detection</h4><p>Low-light and after-dark motion detection, night vision aware.</p></div>
+      <div class="cap-tile"><span class="idx">08</span><h4>Real-time alerts &amp; event logging</h4><p>Every detection is timestamped, logged, and pushed to the command console.</p></div>
+    </div>
+
+    <div class="outcomes">
+      <div class="oc"><h4>No dedicated hardware</h4><p>Removes dependence on expensive dedicated surveillance hardware — runs on the IP cameras already installed.</p></div>
+      <div class="oc"><h4>Faster response</h4><p>Real-time alerts for security incidents and border intrusions improve situational awareness and response time.</p></div>
+      <div class="oc"><h4>Built to integrate</h4><p>Supports integration with existing command and control systems for a smooth rollout.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE MONITORING -->
+<section class="dossier monitor-section" id="monitor">
+  <div class="wrap">
+    <div class="stamp">Live Monitoring</div>
+    <div class="dossier-head">
+      <span class="dossier-num">03</span>
+      <h2 class="dossier-title">Watch the perimeter</h2>
+    </div>
+    <p style="color:var(--paper-dim);max-width:700px;">A live camera feed will occupy the main monitoring window. The right-side panel explains how IBVAP identifies a virtual-fence intrusion and turns it into an actionable alert.</p>
+    <div class="monitor-layout">
+      <div class="camera-panel">
+        <video id="webcam" class="is-placeholder" autoplay muted playsinline aria-label="Live webcam preview"></video>
+        <div class="camera-overlay"></div>
+        <div class="camera-label">CAM 01 / BORDER SECTOR A</div>
+        <div class="camera-status" id="cameraStatus">STANDBY</div>
+        <div class="camera-crosshair"></div>
+        <div class="camera-prompt" id="cameraPrompt">
+          <strong>Live camera preview</strong>
+          Webcam access is not connected yet. Start the local demo feed to preview the monitoring layout.
+          <br>
+        </div>
+        <div class="camera-controls">
+          <button type="button" class="camera-button" id="startCamera">
+            Enable webcam
+          </button>
+          <button type="button" class="camera-button camera-stop" id="stopCamera" hidden>
+            Stop camera
+          </button>
+        </div>
+      </div>
+      <aside class="monitor-note">
+        <h3>How intrusion detection works</h3>
+        <p>IBVAP observes the live stream, maps a virtual fence across the scene, and creates an event when a tracked person or vehicle crosses the defined boundary.</p>
+        <ol class="monitor-steps">
+          <li><b>01</b> Detect people and vehicles in each frame.</li>
+          <li><b>02</b> Track movement against the virtual boundary.</li>
+          <li><b>03</b> Raise an alert when the line is crossed.</li>
+          <li><b>04</b> Log the event for later review.</li>
+        </ol>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- REPORTS -->
+<section class="dossier reports-section" id="reports">
+  <div class="wrap">
+    <div class="stamp">Past Records</div>
+    <div class="dossier-head">
+      <span class="dossier-num">04</span>
+      <h2 class="dossier-title">Case reports</h2>
+    </div>
+    <p style="color:var(--paper-dim);max-width:700px;">Past incident records will appear here once the reporting data source is integrated. The table structure is ready for issue dates and case details.</p>
+    <div class="reports-panel">
+      <table class="reports-table">
+        <thead><tr><th>Issue date</th><th>Case</th></tr></thead>
+        <tbody>
+          <tr><td>—</td><td class="report-empty">No past records available — data integration pending.</td></tr>
+          <tr><td>—</td><td class="report-empty">No past records available — data integration pending.</td></tr>
+          <tr><td>—</td><td class="report-empty">No past records available — data integration pending.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section class="dossier" id="team">
+  <div class="wrap">
+    <div class="stamp">The Team</div>
+    <div class="dossier-head">
+      <span class="dossier-num">05</span>
+      <h2 class="dossier-title">Six people. One perimeter.</h2>
+    </div>
+    <p style="color:var(--paper-dim);max-width:640px;">A six-member demonstration team working across computer vision, backend systems, interface design and field operations. A six-member demonstration team working across computer vision, backend systems, interface design and field operations.</p>
+
+    <div class="team-grid">
+      <div class="member"><div class="ph">01</div><h4>Puneet Hayer</h4><div class="role">Computer Vision Lead</div><div class="social-links">
+  <a href="https://github.com/puneethayer" target="_blank" rel="noopener noreferrer" aria-label="Puneet Hayer GitHub">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.084-.729.084-.729 1.205.084 1.838 1.237 1.838 1.237 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.624-5.376-12-12-12z"/></svg>
+  </a>
+  <a href="https://www.linkedin.com/in/puneet-hayer-b9a113395/" target="_blank" rel="noopener noreferrer" aria-label="Puneet Hayer LinkedIn">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z"/></svg>
+  </a>
+</div></div>
+      <div class="member"><div class="ph">02</div><h4>Shriyam Sharma</h4><div class="role">AI / ML Engineer</div><div class="social-links">
+  <a href="https://github.com/Shriyam971" target="_blank" rel="noopener noreferrer" aria-label="Shriyam Sharma GitHub">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.084-.729.084-.729 1.205.084 1.838 1.237 1.838 1.237 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.624-5.376-12-12-12z"/></svg>
+  </a>
+  <a href="https://www.linkedin.com/in/shriyam-sharma-077a32326/" target="_blank" rel="noopener noreferrer" aria-label="Shriyam Sharma LinkedIn">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z"/></svg>
+  </a>
+</div></div>
+      <div class="member"><div class="ph">03</div><h4>Fagun Manna</h4><div class="role">Backend Systems Engineer</div><div class="social-links">
+  <a href="https://github.com/fagun-manna" target="_blank" rel="noopener noreferrer" aria-label="Fagun Manna GitHub">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.084-.729.084-.729 1.205.084 1.838 1.237 1.838 1.237 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.624-5.376-12-12-12z"/></svg>
+  </a>
+  <a href="https://www.linkedin.com/in/fagun-manna-387681371/" target="_blank" rel="noopener noreferrer" aria-label="Fagun Manna LinkedIn">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z"/></svg>
+  </a>
+</div></div>
+      <div class="member"><div class="ph">04</div><h4>Aishiki Das</h4><div class="role">Frontend &amp; UX Designer</div><div class="social-links">
+  <a href="https://github.com/aishiki2007" target="_blank" rel="noopener noreferrer" aria-label="Aishiki Das GitHub">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.084-.729.084-.729 1.205.084 1.838 1.237 1.838 1.237 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.624-5.376-12-12-12z"/></svg>
+  </a>
+  <a href="https://www.linkedin.com/in/aishikidas/" target="_blank" rel="noopener noreferrer" aria-label="Aishiki Das LinkedIn">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z"/></svg>
+  </a>
+</div></div>
+      <div class="member"><div class="ph">05</div><h4>Swastika Singh</h4><div class="role">Security Operations Analyst</div><div class="social-links">
+  <a href="https://github.com/Swastika295" target="_blank" rel="noopener noreferrer" aria-label="Swastika Singh GitHub">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.084-.729.084-.729 1.205.084 1.838 1.237 1.838 1.237 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.624-5.376-12-12-12z"/></svg>
+  </a>
+  <a href="https://www.linkedin.com/in/swastika-singh-045898248/" target="_blank" rel="noopener noreferrer" aria-label="Swastika Singh LinkedIn">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z"/></svg>
+  </a>
+</div></div>
+      <div class="member"><div class="ph">06</div><h4>Ayan Roy</h4><div class="role">Project &amp; Field Integration</div><div class="social-links">
+  <a href="https://github.com/AyanRoy669" target="_blank" rel="noopener noreferrer" aria-label="Ayan Roy GitHub">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.084-.729.084-.729 1.205.084 1.838 1.237 1.838 1.237 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.624-5.376-12-12-12z"/></svg>
+  </a>
+  <a href="https://www.linkedin.com/in/ayan-roy-73480b3ba/" target="_blank" rel="noopener noreferrer" aria-label="Ayan Roy LinkedIn">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z"/></svg>
+  </a>
+</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <span>IBVAP</span>
+        <p>Intelligent Border Video Analytics Platform — an AI-driven software layer for existing border CCTV infrastructure.</p>
+      </div>
+      <div class="foot-col">
+        <h5>About Us</h5>
+        <a href="#about">Problem statement</a>
+        <a href="#about">Our solution</a>
+        <a href="#team">The team</a>
+      </div>
+      <div class="foot-col">
+        <h5>Our Legal</h5>
+        <a href="#">Terms of use</a>
+        <a href="#">Privacy policy</a>
+        <a href="#">Data handling</a>
+      </div>
+      <div class="foot-col">
+        <h5>Quick Links</h5>
+        <a href="#monitor">Live monitoring</a>
+        <a href="#reports">Past case reports</a>
+        <a href="presentation.pdf" target="_blank" rel="noopener noreferrer">Presentation</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>IBVAP © 2026</span>
+      <span>Border Out Post Systems — Prototype Build</span>
+    </div>
+  </div>
+</footer>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-bg"></div>
+  <div class="login-box">
+    <button class="lclose" id="closeLogin">Close ✕</button>
+    <div class="login-mark"><span class="dot"></span><span>IBVAP</span></div>
+    <div class="login-sub">Secure Login</div>
+    <form id="loginForm">
+      <div class="field">
+        <label for="uname">Username</label>
+        <input type="text" id="uname" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="pword">Password</label>
+        <input type="password" id="pword" autocomplete="current-password" required>
+      </div>
+      <div class="field">
+        <label for="cap">Captcha</label>
+        <div class="captcha-row">
+          <span class="captcha-code" id="captchaCode">3KQ7X</span>
+          <button type="button" class="captcha-refresh" id="captchaRefresh">⟳</button>
+        </div>
+      </div>
+      <div class="field">
+        <input type="text" id="capInput" placeholder="Enter the code above" required>
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button type="submit" class="login-submit">Sign In</button>
+    </form>
+    <div class="login-note">Authorised personnel only. All access attempts are logged.</div>
+  </div>
+</div>
+
+<script src="ibvap-script.js" defer></script>
+</body>
+</html>
