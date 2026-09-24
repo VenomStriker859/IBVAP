@@ -1,0 +1,1153 @@
+from ultralytics import YOLO
+import torch
+import cv2
+import os
+import csv
+import math
+import time
+import threading
+from datetime import datetime
+from collections import deque
+import numpy as np
+
+# ============================================================
+# OPTIONAL WINDOWS SOUND
+# ============================================================
+try:
+    import winsound
+    WINDOWS_SOUND_AVAILABLE = True
+except ImportError:
+    WINDOWS_SOUND_AVAILABLE = False
+
+# ============================================================
+# DATABASE
+# ============================================================
+try:
+    from database.db import init_db, log_event
+except ImportError:
+    try:
+        from db import init_db, log_event
+    except ImportError:
+        def init_db():
+            print("Database module not found. Continuing without database.")
+
+        def log_event(**kwargs):
+            pass
+
+# ============================================================
+# PATHS / CONFIGURATION
+# ============================================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "yolo26n.pt")
+POSE_MODEL_PATH = os.path.join(BASE_DIR, "yolo11n-pose.pt")
+DEFAULT_VIDEO_PATH = os.path.join(BASE_DIR, "cctv.mp4")
+DEFAULT_OUTPUT_PATH = os.path.join(BASE_DIR, "intrusion_result.mp4")
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+SNAPSHOT_DIR = os.path.join(LOG_DIR, "snapshots")
+LOG_FILE = os.path.join(LOG_DIR, "intrusion_log.csv")
+CAMERA_ID = "CAM_01"
+
+# Feature switches. Set False if you want to disable that feature.
+ENABLE_INTRUSION = True
+ENABLE_SUSPICIOUS_ACTIVITY = True
+ENABLE_SOUND_ALERTS = True
+ENABLE_SKELETON = True
+ENABLE_TRAIL = True
+
+DETECTION_CLASSES = [0, 2, 3, 5, 7]
+DISPLAY_NAMES = {0: "HUMAN", 2: "CAR", 3: "BIKE", 5: "BUS", 7: "TRUCK"}
+CATEGORY_NAMES = {0: "person", 2: "car", 3: "motorcycle", 5: "bus", 7: "truck"}
+
+# COCO 17-keypoint order used by YOLO pose models.
+KEYPOINT_NAMES = [
+    "NOSE", "LEFT_EYE", "RIGHT_EYE", "LEFT_EAR", "RIGHT_EAR",
+    "LEFT_SHOULDER", "RIGHT_SHOULDER", "LEFT_ELBOW", "RIGHT_ELBOW",
+    "LEFT_WRIST", "RIGHT_WRIST", "LEFT_HIP", "RIGHT_HIP",
+    "LEFT_KNEE", "RIGHT_KNEE", "LEFT_ANKLE", "RIGHT_ANKLE"
+]
+
+SKELETON_CONNECTIONS = [
+    (0, 1), (0, 2), (1, 3), (2, 4),
+    (5, 6),
+    (5, 7), (7, 9),
+    (6, 8), (8, 10),
+    (5, 11), (6, 12), (11, 12),
+    (11, 13), (13, 15),
+    (12, 14), (14, 16)
+]
+
+COLOR_GREEN = (0, 255, 0)
+COLOR_RED = (0, 0, 255)
+COLOR_YELLOW = (0, 255, 255)
+COLOR_ORANGE = (0, 165, 255)
+COLOR_MAGENTA = (255, 0, 255)
+COLOR_WHITE = (255, 255, 255)
+
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(SNAPSHOT_DIR, exist_ok=True)
+
+# ============================================================
+# CSV / ALERT FUNCTIONS
+# ============================================================
+def initialize_csv():
+    if not os.path.exists(LOG_FILE):
+        with open(LOG_FILE, "w", newline="") as file:
+            csv.writer(file).writerow([
+                "Date", "Time", "Object ID", "Logical ID", "Category",
+                "Event", "Behavior", "Confidence", "Centroid X",
+                "Centroid Y", "Snapshot"
+            ])
+
+
+sound_lock = threading.Lock()
+
+
+def play_alert_sound():
+    """Play alert asynchronously without blocking video processing."""
+    if not ENABLE_SOUND_ALERTS:
+        return
+
+    def _play():
+        if not sound_lock.acquire(blocking=False):
+            return
+
+        try:
+            if WINDOWS_SOUND_AVAILABLE:
+                try:
+                    winsound.Beep(1200, 250)
+                    winsound.Beep(1600, 250)
+                except Exception:
+                    pass
+            else:
+                print("\a", end="", flush=True)
+        finally:
+            sound_lock.release()
+
+    threading.Thread(target=_play, daemon=True).start()
+
+
+def save_snapshot(frame, prefix, number):
+    filename = f"{prefix}_{number:04d}.jpg"
+    path = os.path.join(SNAPSHOT_DIR, filename)
+    cv2.imwrite(path, frame)
+    return os.path.abspath(path)
+
+
+def write_event_csv(track_id, logical_id, category, event_name, behavior,
+                    confidence, centroid, snapshot_path):
+    now = datetime.now()
+    with open(LOG_FILE, "a", newline="") as file:
+        csv.writer(file).writerow([
+            now.strftime("%Y-%m-%d"),
+            now.strftime("%H:%M:%S"),
+            track_id,
+            logical_id,
+            category,
+            event_name,
+            behavior,
+            f"{float(confidence):.4f}",
+            centroid[0],
+            centroid[1],
+            snapshot_path
+        ])
+
+# ============================================================
+# GEOMETRY FUNCTIONS
+# ============================================================
+def calculate_distance(point1, point2):
+    return math.hypot(point1[0] - point2[0], point1[1] - point2[1])
+
+
+def calculate_iou(box_a, box_b):
+    ax1, ay1, ax2, ay2 = box_a
+    bx1, by1, bx2, by2 = box_b
+
+    ix1 = max(ax1, bx1)
+    iy1 = max(ay1, by1)
+    ix2 = min(ax2, bx2)
+    iy2 = min(ay2, by2)
+
+    iw = max(0, ix2 - ix1)
+    ih = max(0, iy2 - iy1)
+    intersection = iw * ih
+
+    area_a = max(0, ax2 - ax1) * max(0, ay2 - ay1)
+    area_b = max(0, bx2 - bx1) * max(0, by2 - by1)
+    union = area_a + area_b - intersection
+
+    return intersection / union if union > 0 else 0.0
+
+# ============================================================
+# POSE FUNCTIONS
+# ============================================================
+def find_matching_pose(person_box, pose_boxes, pose_keypoints, pose_confidences):
+    if pose_boxes is None or pose_keypoints is None:
+        return None
+
+    best_index = None
+    best_iou = 0.0
+
+    for index, pose_box in enumerate(pose_boxes):
+        iou = calculate_iou(person_box, pose_box)
+        if iou > best_iou:
+            best_iou = iou
+            best_index = index
+
+    if best_index is None or best_iou < 0.10:
+        return None
+
+    return {
+        "keypoints": pose_keypoints[best_index],
+        "confidences": (
+            pose_confidences[best_index]
+            if pose_confidences is not None
+            else None
+        )
+    }
+
+
+def draw_skeleton(frame, keypoints, confidences, confidence_threshold=0.35):
+    """Draw actual YOLO pose keypoints, not estimated points from the box."""
+    if keypoints is None:
+        return
+
+    if confidences is None:
+        confidences = np.ones(len(keypoints), dtype=float)
+
+    for start, end in SKELETON_CONNECTIONS:
+        if start >= len(keypoints) or end >= len(keypoints):
+            continue
+        if confidences[start] < confidence_threshold or confidences[end] < confidence_threshold:
+            continue
+
+        p1 = (int(keypoints[start][0]), int(keypoints[start][1]))
+        p2 = (int(keypoints[end][0]), int(keypoints[end][1]))
+        cv2.line(frame, p1, p2, COLOR_YELLOW, 3)
+
+    for index, point in enumerate(keypoints):
+        if index >= len(confidences) or confidences[index] < confidence_threshold:
+            continue
+        p = (int(point[0]), int(point[1]))
+        cv2.circle(frame, p, 6, COLOR_YELLOW, -1)
+
+
+def check_pose_intrusion(polygon, keypoints, confidences, centroid,
+                         confidence_threshold=0.35):
+    """A person intrudes if any sufficiently confident body keypoint enters the fence."""
+    if keypoints is not None:
+        if confidences is None:
+            confidences = np.ones(len(keypoints), dtype=float)
+
+        for index, point in enumerate(keypoints):
+            if index >= len(confidences) or confidences[index] < confidence_threshold:
+                continue
+
+            body_point = (int(point[0]), int(point[1]))
+            if cv2.pointPolygonTest(polygon, body_point, False) >= 0:
+                return True
+
+    return cv2.pointPolygonTest(polygon, centroid, False) >= 0
+
+# ============================================================
+# LOGICAL-ID / RE-ID FUNCTIONS
+# ============================================================
+def find_matching_intruder(centroid, category, frame_number, logical_objects,
+                           lost_memory_frames, reid_distance, matched_logicals):
+    best_match = None
+    best_distance = float("inf")
+
+    for logical_id, info in logical_objects.items():
+        if logical_id in matched_logicals:
+            continue
+        if frame_number - info["last_seen_frame"] > lost_memory_frames:
+            continue
+        if info["category"] != category:
+            continue
+
+        distance = calculate_distance(centroid, info["last_centroid"])
+        if distance < reid_distance and distance < best_distance:
+            best_distance = distance
+            best_match = logical_id
+
+    return best_match
+
+# ============================================================
+# BEHAVIORAL ANALYTICS
+# ============================================================
+def analyze_behavior(track_id, centroid, bbox, keypoints, confidences,
+                     behavior_history, fps, current_time=None):
+    """
+    Rule-based behavioral analytics using temporal movement + pose.
+
+    Detects:
+      - LOITERING
+      - RAPID MOVEMENT
+      - ERRATIC MOVEMENT
+      - HANDS RAISED
+      - CROUCHING
+
+    These are indicators, not proof of criminal intent.
+    """
+    if track_id not in behavior_history:
+        behavior_history[track_id] = {
+            "positions": deque(maxlen=max(30, int(fps * 10))),
+            "directions": deque(maxlen=20)
+        }
+
+    history = behavior_history[track_id]
+    positions = history["positions"]
+    suspicious = []
+    # Use video time rather than wall-clock processing time.
+    # This keeps loitering consistent when the video is processed faster
+    # or slower than real time.
+    now = current_time if current_time is not None else time.time()
+    positions.append((centroid, now))
+
+    x1, y1, x2, y2 = bbox
+    box_width = max(1, x2 - x1)
+    box_height = max(1, y2 - y1)
+
+    # ---------- RAPID MOVEMENT ----------
+    if len(positions) >= 2:
+        distance = calculate_distance(positions[-2][0], positions[-1][0])
+        normalized_speed = (distance * fps) / box_height
+        if normalized_speed > 1.2:
+            suspicious.append("RAPID MOVEMENT")
+
+    # ---------- ERRATIC MOVEMENT ----------
+    if len(positions) >= 3:
+        p1, p2, p3 = positions[-3][0], positions[-2][0], positions[-1][0]
+        v1 = (p2[0] - p1[0], p2[1] - p1[1])
+        v2 = (p3[0] - p2[0], p3[1] - p2[1])
+        m1 = math.hypot(*v1)
+        m2 = math.hypot(*v2)
+
+        if m1 > 5 and m2 > 5:
+            cosine = (v1[0] * v2[0] + v1[1] * v2[1]) / (m1 * m2)
+            cosine = max(-1.0, min(1.0, cosine))
+            angle = math.degrees(math.acos(cosine))
+            if angle > 100:
+                history["directions"].append(angle)
+
+    if len(history["directions"]) >= 6:
+        suspicious.append("ERRATIC MOVEMENT")
+
+    # ---------- LOITERING ----------
+    # Loitering is checked EVERYWHERE in the frame. It does NOT depend
+    # on the virtual-fence polygon. The anchor moves with the person
+    # only after they have moved far enough away from the current area.
+    LOITER_TIME_SECONDS = 6.0
+    LOITER_RADIUS_BODY_HEIGHTS = 1.5
+
+    if "loiter_anchor" not in history:
+        history["loiter_anchor"] = centroid
+        history["loiter_start"] = now
+
+    loiter_anchor = history["loiter_anchor"]
+    loiter_distance = calculate_distance(loiter_anchor, centroid)
+    loiter_radius = max(35.0, box_height * LOITER_RADIUS_BODY_HEIGHTS)
+
+    if loiter_distance <= loiter_radius:
+        loiter_duration = now - history["loiter_start"]
+        if loiter_duration >= LOITER_TIME_SECONDS:
+            suspicious.append("LOITERING")
+    else:
+        # Person moved to a new area, so start a new loitering timer.
+        history["loiter_anchor"] = centroid
+        history["loiter_start"] = now
+
+    # ---------- POSE BEHAVIOR ----------
+    if keypoints is not None and len(keypoints) >= 17:
+        if confidences is None:
+            confidences = np.ones(len(keypoints), dtype=float)
+
+        def valid(index):
+            return index < len(confidences) and confidences[index] >= 0.35
+
+        # Hands raised: both wrists above both shoulders.
+        if all(valid(i) for i in [5, 6, 9, 10]):
+            if keypoints[9][1] < keypoints[5][1] and keypoints[10][1] < keypoints[6][1]:
+                suspicious.append("HANDS RAISED")
+
+        # Crouching: torso is substantially compressed.
+        if all(valid(i) for i in [5, 6, 11, 12]):
+            shoulder_y = (keypoints[5][1] + keypoints[6][1]) / 2
+            hip_y = (keypoints[11][1] + keypoints[12][1]) / 2
+            normalized_torso = (hip_y - shoulder_y) / box_height
+            if normalized_torso < 0.22:
+                suspicious.append("CROUCHING")
+
+    return sorted(set(suspicious))
+
+
+def update_suspicion_state(track_id, suspicious_behaviors, suspicion_history,
+                           window_size=12, confirm_frames=5):
+    """Confirm behavior only when it persists across multiple frames."""
+    if track_id not in suspicion_history:
+        suspicion_history[track_id] = {
+            "frames": deque(maxlen=window_size),
+            "confirmed": False,
+            "last_event": 0.0
+        }
+
+    state = suspicion_history[track_id]
+    raw = bool(suspicious_behaviors)
+    state["frames"].append({"suspicious": raw, "behaviors": list(suspicious_behaviors)})
+
+    suspicious_frame_count = sum(1 for item in state["frames"] if item["suspicious"])
+    counts = {}
+    for item in state["frames"]:
+        for behavior in item["behaviors"]:
+            counts[behavior] = counts.get(behavior, 0) + 1
+
+    if suspicious_frame_count >= confirm_frames:
+        state["confirmed"] = True
+    elif state["confirmed"] and suspicious_frame_count <= 2:
+        state["confirmed"] = False
+
+    confirmed_behaviors = [
+        behavior for behavior, count in counts.items()
+        if count >= max(2, confirm_frames // 2)
+    ]
+
+    score = suspicious_frame_count / max(1, len(state["frames"]))
+
+    return {
+        "confirmed": state["confirmed"],
+        "score": score,
+        "confirmed_behaviors": confirmed_behaviors,
+        "suspicious_frames": suspicious_frame_count
+    }
+
+# ============================================================
+# VISUALIZATION FUNCTIONS
+# ============================================================
+def draw_restricted_zone(frame, polygon):
+    overlay = frame.copy()
+    cv2.fillPoly(overlay, [polygon], COLOR_RED)
+    frame = cv2.addWeighted(overlay, 0.12, frame, 0.88, 0)
+    cv2.polylines(frame, [polygon], True, COLOR_RED, 4)
+    cv2.putText(frame, "RESTRICTED ZONE", (20, 125),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, COLOR_RED, 2)
+    return frame
+
+
+def draw_trail(frame, centroid_history, track_id, centroid, max_trail=30):
+    if not ENABLE_TRAIL:
+        return
+
+    if track_id not in centroid_history:
+        centroid_history[track_id] = deque(maxlen=max_trail)
+    centroid_history[track_id].append(centroid)
+
+    trail = centroid_history[track_id]
+    for i in range(1, len(trail)):
+        cv2.line(frame, trail[i - 1], trail[i], COLOR_MAGENTA, 2)
+
+# ============================================================
+# EVENT FUNCTIONS
+# ============================================================
+def create_intrusion_event(frame, camera_id, track_id, logical_id,
+                           category, confidence, centroid, event_number, events):
+    snapshot_path = save_snapshot(frame, "intrusion", event_number)
+    database_status = "SUCCESS"
+
+    try:
+        log_event(
+            camera_id=camera_id,
+            object_type=category,
+            track_id=track_id,
+            event_type="intrusion",
+            confidence=float(confidence),
+            snapshot_path=snapshot_path
+        )
+    except Exception as exc:
+        database_status = "FAILED"
+        print(f"Database error: {exc}")
+
+    write_event_csv(
+        track_id, logical_id, category, "INTRUSION",
+        "CROSSED_RESTRICTED_ZONE", confidence, centroid, snapshot_path
+    )
+
+    events.append({
+        "camera_id": camera_id,
+        "track_id": track_id,
+        "logical_id": logical_id,
+        "category": category,
+        "event": "INTRUSION",
+        "confidence": float(confidence),
+        "snapshot": snapshot_path,
+        "database_status": database_status
+    })
+
+
+def create_suspicious_event(frame, camera_id, track_id, logical_id,
+                            confidence, centroid, behaviors,
+                            suspicious_score, event_number, events):
+    snapshot_path = save_snapshot(frame, "suspicious", event_number)
+    behavior_text = " | ".join(behaviors) if behaviors else "SUSPICIOUS_ACTIVITY"
+
+    try:
+        log_event(
+            camera_id=camera_id,
+            object_type="person",
+            track_id=track_id,
+            event_type="suspicious_activity",
+            confidence=float(confidence),
+            snapshot_path=snapshot_path
+        )
+    except Exception as exc:
+        print(f"Suspicious activity database error: {exc}")
+
+    write_event_csv(
+        track_id, logical_id, "person", "SUSPICIOUS_ACTIVITY",
+        behavior_text, suspicious_score, centroid, snapshot_path
+    )
+
+    events.append({
+        "camera_id": camera_id,
+        "track_id": track_id,
+        "logical_id": logical_id,
+        "category": "person",
+        "event": "SUSPICIOUS_ACTIVITY",
+        "behavior": behavior_text,
+        "confidence": float(suspicious_score),
+        "snapshot": snapshot_path
+    })
+
+# ============================================================
+# POLYGON SELECTION
+# ============================================================
+polygon_points = []
+
+
+def mouse_callback(event, x, y, flags, param):
+    global polygon_points
+    if event == cv2.EVENT_LBUTTONDOWN:
+        polygon_points.append((x, y))
+        print(f"Point added: ({x}, {y})")
+    elif event == cv2.EVENT_RBUTTONDOWN and polygon_points:
+        removed = polygon_points.pop()
+        print(f"Removed point: {removed}")
+
+
+def select_polygon(video_path):
+    global polygon_points
+    polygon_points = []
+
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Could not open video: {video_path}")
+
+    success, frame = cap.read()
+    cap.release()
+    if not success:
+        raise RuntimeError("Could not read first frame from video.")
+
+    window = "IBVAP - DRAW RESTRICTED AREA"
+    cv2.namedWindow(window, cv2.WINDOW_NORMAL)
+    cv2.setMouseCallback(window, mouse_callback)
+
+    print("\nLEFT CLICK = Add point")
+    print("RIGHT CLICK = Undo point")
+    print("R = Reset")
+    print("ENTER = Confirm")
+    print("ESC = Cancel\n")
+
+    while True:
+        display = frame.copy()
+
+        for i, point in enumerate(polygon_points):
+            cv2.circle(display, point, 7, COLOR_YELLOW, -1)
+            cv2.putText(display, str(i + 1), (point[0] + 10, point[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_YELLOW, 2)
+
+        if len(polygon_points) >= 2:
+            pts = np.array(polygon_points, dtype=np.int32)
+            cv2.polylines(display, [pts], False, COLOR_RED, 3)
+
+        if len(polygon_points) >= 3:
+            pts = np.array(polygon_points, dtype=np.int32)
+            overlay = display.copy()
+            cv2.fillPoly(overlay, [pts], COLOR_RED)
+            display = cv2.addWeighted(overlay, 0.20, display, 0.80, 0)
+            cv2.polylines(display, [pts], True, COLOR_RED, 4)
+
+        cv2.rectangle(display, (10, 10), (620, 120), (0, 0, 0), -1)
+        instructions = [
+            "LEFT CLICK: Add Point",
+            "RIGHT CLICK: Undo Point",
+            "R: Reset",
+            "ENTER: Confirm | ESC: Cancel"
+        ]
+        for i, text in enumerate(instructions):
+            cv2.putText(display, text, (20, 35 + i * 23),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, COLOR_WHITE, 1)
+
+        cv2.imshow(window, display)
+        key = cv2.waitKey(20) & 0xFF
+
+        if key == ord("r"):
+            polygon_points.clear()
+        elif key in (13, 10):
+            if len(polygon_points) >= 3:
+                break
+            print("Select at least 3 points.")
+        elif key == 27:
+            cv2.destroyAllWindows()
+            return None
+
+    cv2.destroyAllWindows()
+    return polygon_points.copy()
+
+# ============================================================
+# MODEL OUTPUT EXTRACTION
+# ============================================================
+def extract_pose_results(pose_results):
+    pose_boxes = None
+    pose_keypoints = None
+    pose_confidences = None
+
+    if pose_results is None or len(pose_results) == 0:
+        return pose_boxes, pose_keypoints, pose_confidences
+
+    result = pose_results[0]
+    if result.boxes is not None and result.keypoints is not None:
+        pose_boxes = result.boxes.xyxy.cpu().numpy()
+        pose_keypoints = result.keypoints.xy.cpu().numpy()
+        if result.keypoints.conf is not None:
+            pose_confidences = result.keypoints.conf.cpu().numpy()
+
+    return pose_boxes, pose_keypoints, pose_confidences
+
+# ============================================================
+# MAIN DETECTION FUNCTION
+# ============================================================
+def run_detection(video_path=DEFAULT_VIDEO_PATH,
+                  fence_points=None,
+                  output_path=DEFAULT_OUTPUT_PATH,
+                  camera_id=CAMERA_ID,
+                  show_window=True,
+                  live_callback=None):
+    """
+    Run the existing IBVAP detection pipeline with suspicious-activity
+    analytics integrated into the tracked-person flow.
+
+    show_window=True keeps the existing desktop/OpenCV behavior.
+    Streamlit can call this function with show_window=False and supply
+    fence_points directly.
+    """
+    if not fence_points or len(fence_points) < 3:
+        raise ValueError("At least 3 virtual fence points are required.")
+
+    init_db()
+    initialize_csv()
+
+    print("\nLoading detection model...")
+    torch.backends.cudnn.benchmark = True
+    torch.set_float32_matmul_precision("high")
+    model = YOLO(MODEL_PATH)
+    print("Detection model loaded.")
+
+    pose_model = None
+    if ENABLE_SKELETON or ENABLE_SUSPICIOUS_ACTIVITY or ENABLE_INTRUSION:
+        print("Loading pose model...")
+        pose_model = YOLO(POSE_MODEL_PATH)
+        print("Pose model loaded.")
+
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Could not open video: {video_path}")
+
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps <= 0:
+        fps = 25.0
+
+    polygon = np.array(fence_points, dtype=np.int32)
+
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+
+    # Tracking / behavior state.
+    lost_memory_frames = int(fps * 5)
+    reid_distance = 150
+    centroid_history = {}
+    behavior_history = {}
+    suspicion_history = {}
+    track_to_logical = {}
+    logical_objects = {}
+    next_logical_id = 1
+
+    intrusion_event_number = 0
+    suspicious_event_number = 0
+    frame_number = 0
+    events = []
+
+    last_global_alert = -999.0
+    alert_cooldown = 3.0
+
+    live_window = "IBVAP - AI BORDER SURVEILLANCE"
+    if show_window:
+        cv2.namedWindow(live_window, cv2.WINDOW_NORMAL)
+
+    print("\n============================================================")
+    print("LIVE DETECTION STARTED")
+    print("============================================================")
+    print("Object Detection :", True)
+    print("ByteTrack        :", True)
+    print("Skeleton         :", ENABLE_SKELETON)
+    print("Virtual Fence    :", ENABLE_INTRUSION)
+    print("Behavioral       :", ENABLE_SUSPICIOUS_ACTIVITY)
+    print("Sound Alerts     :", ENABLE_SOUND_ALERTS)
+    print("Press Q to stop.\n")
+
+    while True:
+        loop_start = time.perf_counter()
+
+        success, frame = cap.read()
+        if not success:
+            break
+
+        frame_number += 1
+
+        # ---------- OBJECT TRACKING ----------
+        results = model.track(
+            frame,
+            persist=True,
+            classes=DETECTION_CLASSES,
+            tracker="bytetrack.yaml",
+            device=0,
+            half=True,
+            verbose=False
+        )
+        boxes = results[0].boxes
+
+        # ---------- ACTUAL POSE ESTIMATION ----------
+        pose_boxes = None
+        pose_keypoints = None
+        pose_confidences = None
+        if pose_model is not None:
+            pose_results = pose_model(frame, device=0, verbose=False)
+            pose_boxes, pose_keypoints, pose_confidences = extract_pose_results(pose_results)
+
+        # ---------- FRAME STATE ----------
+        current_logical_intrusions = set()
+        current_suspicious_logicals = set()
+        current_objects = {}
+        matched_logicals = set()
+
+        if ENABLE_INTRUSION:
+            frame = draw_restricted_zone(frame, polygon)
+        else:
+            cv2.polylines(frame, [polygon], True, COLOR_RED, 4)
+
+        # ---------- PROCESS TRACKED OBJECTS ----------
+        if boxes is not None and boxes.id is not None:
+            coordinates = boxes.xyxy.cpu().numpy()
+            track_ids = boxes.id.cpu().numpy().astype(int)
+            class_ids = boxes.cls.cpu().numpy().astype(int)
+            confidences = boxes.conf.cpu().numpy()
+
+            for box, track_id, class_id, confidence in zip(
+                coordinates, track_ids, class_ids, confidences
+            ):
+                x1, y1, x2, y2 = map(int, box)
+                bbox = (x1, y1, x2, y2)
+                category = CATEGORY_NAMES.get(class_id, "object")
+                display_name = DISPLAY_NAMES.get(class_id, "OBJECT")
+                centroid = ((x1 + x2) // 2, (y1 + y2) // 2)
+
+                # ---------- MATCH ACTUAL POSE TO THIS PERSON ----------
+                person_keypoints = None
+                person_pose_confidences = None
+                if class_id == 0 and pose_model is not None:
+                    matched_pose = find_matching_pose(
+                        bbox, pose_boxes, pose_keypoints, pose_confidences
+                    )
+                    if matched_pose is not None:
+                        person_keypoints = matched_pose["keypoints"]
+                        person_pose_confidences = matched_pose["confidences"]
+
+                # ---------- INTRUSION ----------
+                if ENABLE_INTRUSION:
+                    if class_id == 0:
+                        inside_zone = check_pose_intrusion(
+                            polygon, person_keypoints,
+                            person_pose_confidences, centroid
+                        )
+                    else:
+                        inside_zone = cv2.pointPolygonTest(
+                            polygon, centroid, False
+                        ) >= 0
+                else:
+                    inside_zone = False
+
+                # ---------- LOGICAL ID ----------
+                logical_id = track_to_logical.get(track_id)
+                if logical_id is None:
+                    logical_id = find_matching_intruder(
+                        centroid,
+                        category,
+                        frame_number,
+                        logical_objects,
+                        lost_memory_frames,
+                        reid_distance,
+                        matched_logicals
+                    )
+                    if logical_id is not None:
+                        matched_logicals.add(logical_id)
+                    else:
+                        logical_id = next_logical_id
+                        next_logical_id += 1
+                        logical_objects[logical_id] = {
+                            "category": category,
+                            "last_centroid": centroid,
+                            "last_seen_frame": frame_number,
+                            "inside": inside_zone,
+                            "event_created": False
+                        }
+                    track_to_logical[track_id] = logical_id
+
+                old_info = logical_objects.get(logical_id, {})
+                was_inside = old_info.get("inside", False)
+                crossed_into_zone = not was_inside and inside_zone
+
+                # ---------- UPDATE LOGICAL OBJECT ----------
+                # Reset event_created after the person leaves the zone.
+                # This means the SAME logical person can trigger another
+                # intrusion event after leaving and re-entering.
+                previous_event_created = old_info.get("event_created", False)
+                if not inside_zone:
+                    previous_event_created = False
+
+                logical_objects[logical_id] = {
+                    "category": category,
+                    "last_centroid": centroid,
+                    "last_seen_frame": frame_number,
+                    "inside": inside_zone,
+                    "event_created": previous_event_created
+                }
+
+                current_objects[track_id] = {
+                    "category": category,
+                    "confidence": float(confidence),
+                    "centroid": centroid,
+                    "logical_id": logical_id
+                }
+
+                # ---------- BEHAVIORAL ANALYTICS ----------
+                # IMPORTANT: behavior state uses the logical ID, not the
+                # temporary ByteTrack ID. This keeps the person's behavior
+                # history when ByteTrack changes the tracker ID.
+                suspicious_behaviors = []
+                if ENABLE_SUSPICIOUS_ACTIVITY and class_id == 0:
+                    suspicious_behaviors = analyze_behavior(
+                        logical_id,
+                        centroid,
+                        bbox,
+                        person_keypoints,
+                        person_pose_confidences,
+                        behavior_history,
+                        fps,
+                        current_time=frame_number / fps
+                    )
+
+                suspicion_result = update_suspicion_state(
+                    logical_id,
+                    suspicious_behaviors,
+                    suspicion_history,
+                    window_size=12,
+                    confirm_frames=5
+                )
+                confirmed_suspicious = (
+                    ENABLE_SUSPICIOUS_ACTIVITY
+                    and class_id == 0
+                    and suspicion_result["confirmed"]
+                )
+                suspicious_score = suspicion_result["score"]
+                confirmed_behaviors = suspicion_result["confirmed_behaviors"]
+                is_suspicious = bool(suspicious_behaviors)
+
+                if inside_zone:
+                    current_logical_intrusions.add(logical_id)
+                if confirmed_suspicious:
+                    current_suspicious_logicals.add(logical_id)
+
+                # ---------- TRAIL ----------
+                draw_trail(frame, centroid_history, track_id, centroid)
+
+                # ---------- COLOR PRIORITY ----------
+                if inside_zone:
+                    box_color = COLOR_RED
+                elif confirmed_suspicious:
+                    box_color = COLOR_RED if (frame_number // 8) % 2 == 0 else COLOR_ORANGE
+                elif is_suspicious:
+                    box_color = COLOR_ORANGE
+                else:
+                    box_color = COLOR_GREEN
+
+                # ---------- BOX ----------
+                cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 3)
+                cv2.circle(frame, centroid, 6, COLOR_MAGENTA, -1)
+
+                # ---------- ACTUAL SKELETON ----------
+                if (
+                    ENABLE_SKELETON
+                    and class_id == 0
+                    and person_keypoints is not None
+                ):
+                    draw_skeleton(
+                        frame,
+                        person_keypoints,
+                        person_pose_confidences
+                    )
+
+                # ---------- LABEL ----------
+                if inside_zone:
+                    label = f"INTRUDER | ID:{logical_id}"
+                elif confirmed_suspicious:
+                    label = f"CONFIRMED SUSPICIOUS | ID:{logical_id}"
+                elif is_suspicious:
+                    label = f"ANALYZING ACTIVITY | ID:{logical_id}"
+                else:
+                    label = f"{display_name} | ID:{logical_id}"
+
+                cv2.putText(
+                    frame, label, (x1, max(y1 - 15, 30)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.65, box_color, 2
+                )
+
+                cv2.putText(
+                    frame,
+                    f"Confidence: {confidence:.2f}",
+                    (x1, min(y2 + 25, height - 20)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                    COLOR_WHITE, 2
+                )
+
+                # ---------- BEHAVIOR DISPLAY ----------
+                if is_suspicious:
+                    display_behaviors = (
+                        confirmed_behaviors
+                        if confirmed_suspicious and confirmed_behaviors
+                        else suspicious_behaviors
+                    )
+                    behavior_text = " | ".join(display_behaviors)
+                    cv2.putText(
+                        frame,
+                        behavior_text,
+                        (x1, min(y2 + 50, height - 5)),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.45,
+                        COLOR_ORANGE,
+                        2
+                    )
+                    cv2.putText(
+                        frame,
+                        f"Suspicion Score: {suspicious_score:.0%}",
+                        (x1, min(y2 + 75, height - 5)),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.45,
+                        COLOR_YELLOW,
+                        1
+                    )
+
+                if crossed_into_zone:
+                    cv2.putText(
+                        frame,
+                        "CROSSED VIRTUAL FENCE!",
+                        (x1, max(y1 - 45, 25)),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        COLOR_RED,
+                        2
+                    )
+
+                # ---------- SOUND ALERT ----------
+                now_time = time.time()
+                should_alert = inside_zone or confirmed_suspicious
+                if (
+                    ENABLE_SOUND_ALERTS
+                    and should_alert
+                    and now_time - last_global_alert >= alert_cooldown
+                ):
+                    play_alert_sound()
+                    last_global_alert = now_time
+
+                # ---------- SUSPICIOUS EVENT ----------
+                if confirmed_suspicious:
+                    state = suspicion_history[logical_id]
+                    last_event = state.get("last_event", 0.0)
+                    if now_time - last_event >= 10.0:
+                        suspicious_event_number += 1
+                        state["last_event"] = now_time
+                        create_suspicious_event(
+                            frame,
+                            camera_id,
+                            track_id,
+                            logical_id,
+                            confidence,
+                            centroid,
+                            confirmed_behaviors,
+                            suspicious_score,
+                            suspicious_event_number,
+                            events
+                        )
+
+        # ---------- INTRUSION EVENT ----------
+        for logical_id in current_logical_intrusions:
+            info = logical_objects.get(logical_id)
+            if info is None or info.get("event_created", False):
+                continue
+
+            intrusion_event_number += 1
+            info["event_created"] = True
+
+            current_track_id = None
+            for tid, lid in track_to_logical.items():
+                if lid == logical_id and tid in current_objects:
+                    current_track_id = tid
+                    break
+
+            object_info = current_objects.get(current_track_id, {})
+            confidence = object_info.get("confidence", 0.0)
+            centroid = info["last_centroid"]
+
+            create_intrusion_event(
+                frame,
+                camera_id,
+                current_track_id if current_track_id is not None else logical_id,
+                logical_id,
+                info["category"],
+                confidence,
+                centroid,
+                intrusion_event_number,
+                events
+            )
+
+            # Immediate event sound even if it was not already triggered above.
+            if ENABLE_SOUND_ALERTS:
+                play_alert_sound()
+                last_global_alert = time.time()
+
+        # ---------- EXPIRE LOGICAL OBJECTS ----------
+        expired = [
+            logical_id
+            for logical_id, info in logical_objects.items()
+            if frame_number - info["last_seen_frame"] > lost_memory_frames
+        ]
+        for logical_id in expired:
+            del logical_objects[logical_id]
+
+        # ---------- STATUS ----------
+        active_intruders = len(current_logical_intrusions)
+        active_suspicious = len(current_suspicious_logicals)
+
+        if active_intruders > 0:
+            cv2.putText(frame, "!!! INTRUSION DETECTED !!!", (20, 45),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, COLOR_RED, 3)
+            cv2.putText(frame, f"Active Intruders: {active_intruders}", (20, 80),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.65, COLOR_RED, 2)
+        elif active_suspicious > 0:
+            if (frame_number // 8) % 2 == 0:
+                cv2.putText(frame, "!!! SUSPICIOUS ACTIVITY DETECTED !!!", (20, 45),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.85, COLOR_RED, 3)
+            cv2.putText(frame, f"Confirmed Suspicious Persons: {active_suspicious}",
+                        (20, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.65, COLOR_ORANGE, 2)
+        else:
+            cv2.putText(frame, "STATUS: SECURE", (20, 45),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, COLOR_GREEN, 2)
+
+        # ---------- COUNTERS ----------
+        cv2.putText(frame, f"Frame: {frame_number}", (20, height - 105),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, COLOR_WHITE, 2)
+        cv2.putText(frame, f"Intrusion Events: {intrusion_event_number}",
+                    (20, height - 75), cv2.FONT_HERSHEY_SIMPLEX, 0.55, COLOR_WHITE, 2)
+        cv2.putText(frame, f"Suspicious Events: {suspicious_event_number}",
+                    (20, height - 45), cv2.FONT_HERSHEY_SIMPLEX, 0.55, COLOR_WHITE, 2)
+        cv2.putText(frame, "IBVAP | AI BORDER SURVEILLANCE", (20, height - 15),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, COLOR_WHITE, 2)
+
+        if show_window:
+            cv2.imshow(live_window, frame)
+
+        out.write(frame)
+
+        # Send the fully processed frame to the live web stream.
+        if live_callback is not None:
+            try:
+                live_callback(frame)
+            except Exception as exc:
+                print(f"Live stream callback error: {exc}")
+
+        # Keep playback at the source video's original FPS.
+        elapsed = time.perf_counter() - loop_start
+        frame_delay = max(0.0, (1.0 / fps) - elapsed)
+
+        if frame_delay > 0:
+            time.sleep(frame_delay)
+
+        if show_window:
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord("q"):
+                print("Detection stopped by user.")
+                break
+
+    cap.release()
+    out.release()
+    if show_window:
+        cv2.destroyAllWindows()
+
+    return {
+        "frames_processed": frame_number,
+        "intrusion_events": intrusion_event_number,
+        "suspicious_events": suspicious_event_number,
+        "events": events,
+        "output_video": os.path.abspath(output_path),
+        "database": os.path.join(BASE_DIR, "database", "ibvap.db"),
+        "csv_log": os.path.abspath(LOG_FILE),
+        "snapshots": os.path.abspath(SNAPSHOT_DIR)
+    }
+
+# ============================================================
+# MAIN
+# ============================================================
+if __name__ == "__main__":
+    print("\n============================================================")
+    print("IBVAP - AI VIRTUAL FENCE + BEHAVIORAL ANALYTICS")
+    print("============================================================\n")
+    print("Input Video:", DEFAULT_VIDEO_PATH)
+    print("\nDraw the restricted area and press ENTER.\n")
+
+    custom_polygon = select_polygon(DEFAULT_VIDEO_PATH)
+
+    if custom_polygon is None:
+        print("Polygon selection cancelled.")
+        raise SystemExit
+
+    result = run_detection(
+        video_path=DEFAULT_VIDEO_PATH,
+        fence_points=custom_polygon,
+        output_path=DEFAULT_OUTPUT_PATH,
+        camera_id=CAMERA_ID,
+        show_window=True
+    )
+
+    print("\n============================================================")
+    print("IBVAP DETECTION RESULT")
+    print("============================================================")
+    print("Intrusion Events  :", result["intrusion_events"])
+    print("Suspicious Events :", result["suspicious_events"])
+    print("Frames Processed  :", result["frames_processed"])
+    print("Result Video      :", result["output_video"])
+    print("Snapshots Folder  :", result["snapshots"])
+    print("CSV Log           :", result["csv_log"])
+    print("Database          :", result["database"])
+    print("============================================================")
