@@ -65,8 +65,22 @@ svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke
 .svg-sprite{position:absolute;width:0;height:0;overflow:hidden}
 
 /* SIDEBAR */
-.brand-mark{width:48px;height:48px;border-radius:13px;background:linear-gradient(145deg,#0b8557,#075d40);display:grid;place-items:center;color:#fff;box-shadow:0 7px 18px rgba(7,121,79,.18)}
-.brand-mark svg{width:29px;height:29px;stroke-width:1.7}
+.brand-logo {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 4px;
+    background: transparent;
+}
+
+.brand-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
 .brand-name{font-size:28px;font-weight:700;letter-spacing:-1px;margin-top:9px}
 .brand-subtitle{text-align:center;color:#5e756d;font-size:13px;line-height:1.45;margin-top:4px}
 .nav-section-label{font-size:11px;font-weight:700;color:#6a7b75;margin:18px 12px 8px;letter-spacing:.12em}

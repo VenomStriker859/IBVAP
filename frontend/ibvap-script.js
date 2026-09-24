@@ -62,89 +62,13 @@ revealElements.forEach((element) => {
   revealObserver.observe(element);
 });
 
+// ---------- Dashboard Login ----------
+const openLogin = document.getElementById("openLogin");
 
-// ---------- Login overlay ----------
-const loginScreen = document.getElementById("loginScreen");
-const openLoginButtons = [
-  document.getElementById("openLogin"),
-  document.getElementById("footLogin")
-];
-const closeLogin = document.getElementById("closeLogin");
-
-function toggleLogin(show) {
-  if (!loginScreen) return;
-
-  loginScreen.classList.toggle("active", show);
-  loginScreen.setAttribute("aria-hidden", String(!show));
-
-  if (show) {
-    document.getElementById("username")?.focus();
-  }
-}
-
-openLoginButtons.forEach((button) => {
-  button?.addEventListener("click", (event) => {
-    event.preventDefault();
-    toggleLogin(true);
-  });
-});
-
-closeLogin?.addEventListener("click", () => toggleLogin(false));
-
-loginScreen?.addEventListener("click", (event) => {
-  if (event.target === loginScreen) {
-    toggleLogin(false);
-  }
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    toggleLogin(false);
-  }
-});
-
-
-// ---------- CAPTCHA ----------
-const captchaCode = document.getElementById("captchaCode");
-const captchaRefresh = document.getElementById("captchaRefresh");
-const loginForm = document.getElementById("loginForm");
-const captchaInput = document.getElementById("capInput");
-const loginError = document.getElementById("loginError");
-
-let currentCaptcha = "";
-
-function generateCaptcha() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-  currentCaptcha = Array.from(
-    { length: 5 },
-    () => chars[Math.floor(Math.random() * chars.length)]
-  ).join("");
-
-  if (captchaCode) {
-    captchaCode.textContent = currentCaptcha;
-  }
-}
-
-generateCaptcha();
-
-captchaRefresh?.addEventListener("click", generateCaptcha);
-
-loginForm?.addEventListener("submit", (event) => {
+openLogin?.addEventListener("click", (event) => {
   event.preventDefault();
-
-  if (!captchaInput || !loginError) return;
-
-  if (captchaInput.value.trim().toUpperCase() !== currentCaptcha) {
-    loginError.textContent = "Captcha does not match. Try again.";
-    captchaInput.value = "";
-    generateCaptcha();
-    return;
-  }
-
-  window.location.href = "dashboard.html";
+  window.location.href = "Dashboard/index.html";
 });
-
 
 // ---------- Local webcam demo ----------
 const webcam = document.getElementById("webcam");
