@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f7f5" />
+  <title>IBVAP — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Ambient security background -->
+<div class="ambient-background" aria-hidden="true">
+  <div class="camo-layer"></div>
+  <div class="topographic-layer">
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="none">
+      <g class="topo-group">
+        <path d="M-100 160 C180 40 350 300 610 150 S1050 40 1700 180"/>
+        <path d="M-100 220 C180 100 350 360 610 210 S1050 100 1700 240"/>
+        <path d="M-100 280 C180 160 350 420 610 270 S1050 160 1700 300"/>
+        <path d="M-100 340 C180 220 350 480 610 330 S1050 220 1700 360"/>
+        <path d="M-100 400 C180 280 350 540 610 390 S1050 280 1700 420"/>
+        <path d="M-100 460 C180 340 350 600 610 450 S1050 340 1700 480"/>
+        <path d="M-100 520 C180 400 350 660 610 510 S1050 400 1700 540"/>
+        <path d="M-100 580 C180 460 350 720 610 570 S1050 460 1700 600"/>
+        <path d="M-100 640 C180 520 350 780 610 630 S1050 520 1700 660"/>
+        <path d="M-100 700 C180 580 350 840 610 690 S1050 580 1700 720"/>
+      </g>
+    </svg>
+  </div>
+  <div class="ambient-wash"></div>
+</div>
+
+  <!-- Professional SVG icon library: no emoji/unicode icons are used in the UI. -->
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-human" viewBox="0 0 24 24"><circle cx="12" cy="7.2" r="3.2"/><path d="M5.5 21c.5-4.4 2.7-6.7 6.5-6.7s6 2.3 6.5 6.7"/><path d="M8.2 15.1v4.4M15.8 15.1v4.4"/></symbol>
+    <symbol id="i-face" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><circle cx="9" cy="10" r=".7" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r=".7" fill="currentColor" stroke="none"/><path d="M8.8 14.2c1 .9 2.1 1.3 3.2 1.3s2.2-.4 3.2-1.3"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="m5.5 10 1.5-4h10l1.5 4"/><path d="M4 10h16a1.5 1.5 0 0 1 1.5 1.5v5A1.5 1.5 0 0 1 20 18h-1.5v2M5.5 18H4a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 4 10"/><path d="M6 18h12M6.5 14h.01M17.5 14h.01"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v5.7c0 4.5-3 7.5-8 9.3-5-1.8-8-4.8-8-9.3V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 15.5A8.4 8.4 0 0 1 8.5 4 8.6 8.6 0 1 0 20 15.5Z"/></symbol>
+    <symbol id="i-gallery" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m5.5 17 4.5-4.5 3 3 2-2 3.5 3.5"/></symbol>
+    <symbol id="i-analytics" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/><path d="m4 8 6-4 6 5 6-6"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2A1.7 1.7 0 0 0 5.4 5.8l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></symbol>
+    <symbol id="i-explore" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="18" r="2"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7h4l1.5-2h5L16 7h4a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 20 19H4a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 4 7Z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20.5H6z"/><path d="M14 3.5v5h4M9 13h6M9 16h6M9 10h2"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="i-login" viewBox="0 0 24 24"><path d="M14 8l4 4-4 4M3 12h15"/><path d="M9 5h-4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4"/><path d="M14 8l4 4-4 4M9 12h9"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 21 20H3L12 4Z"/><path d="M12 9v5M12 17h.01"/></symbol>
+    <symbol id="i-location" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><svg><use href="#i-shield"/></svg></div>
+        <div class="brand-name">IBVAP</div>
+        <div class="brand-subtitle">Intelligent Border<br>Video &amp; Analytics Platform</div>
+      </div>
+
+      <nav class="side-nav" aria-label="Primary navigation">
+        <!-- DASHBOARD -->
+        <button class="nav-item" data-page="Dashboard">
+          <svg class="nav-icon">
+            <use href="#i-dashboard"></use>
+          </svg>
+          <span>Dashboard</span>
+        </button>
+
+        <!-- EXPLORE -->
+        <button
+          class="nav-item explore-toggle"
+          id="exploreToggle"
+          type="button"
+          aria-expanded="true"
+        >
+          <svg class="nav-icon">
+            <use href="#i-explore"></use>
+          </svg>
+
+          <span>Explore</span>
+
+          <svg class="chevron">
+            <use href="#i-chevron"></use>
+          </svg>
+        </button>
+
+        <!-- EXPLORE MENU -->
+        <div
+          class="explore-menu"
+          id="exploreMenu"
+        >
+
+          <button
+            class="sub-nav"
+            data-page="Human Detection"
+            type="button"
+          >
+            <svg class="sub-icon">
+              <use href="#i-human"></use>
+            </svg>
+            <span>Camera Surveillance</span>
+          </button>
+
+          <button
+            class="sub-nav"
+            data-page="Face Detection"
+            type="button"
+          >
+            <svg class="sub-icon">
+              <use href="#i-face"></use>
+            </svg>
+            <span>Face Detection</span>
+          </button>
+
+          <button
+            class="sub-nav"
+            data-page="ANPR"
+            type="button"
+          >
+            <svg class="sub-icon">
+              <use href="#i-car"></use>
+            </svg>
+            <span>ANPR</span>
+          </button>
+
+          <button
+            class="sub-nav"
+            data-page="Night Time Surveillance"
+            type="button"
+          >
+            <svg class="sub-icon">
+              <use href="#i-moon"></use>
+            </svg>
+            <span>Night Time Surveillance</span>
+          </button>
+        </div>
+
+        <!-- INTELLIGENCE -->
+        <div class="nav-section-label">
+          INTELLIGENCE
+        </div>
+
+        <button
+          class="nav-item"
+          data-page="Evidence Gallery"
+          type="button"
+        >
+          <svg class="nav-icon">
+            <use href="#i-gallery"></use>
+          </svg>
+          <span>Evidence Gallery</span>
+        </button>
+
+        <button
+          class="nav-item"
+          data-page="Analytics"
+          type="button"
+        >
+          <svg class="nav-icon">
+            <use href="#i-analytics"></use>
+          </svg>
+          <span>Analytics</span>
+        </button>
+
+        <!-- SYSTEM -->
+        <div class="nav-section-label">
+          SYSTEM
+        </div>
+
+        <button
+          class="nav-item"
+          data-page="Settings"
+          type="button"
+        >
+          <svg class="nav-icon">
+            <use href="#i-settings"></use>
+          </svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="operator">
+          <div class="avatar">AS</div>
+          <div class="operator-info">
+            <strong>Adi Sharma</strong>
+            <span>Security Operator</span>
+          </div>
+          <span class="online-dot" aria-label="Online"></span>
+        </div>
+        <button class="nav-item logout" data-page="Logout" type="button">
+          <svg class="nav-icon"><use href="#i-logout"></use>
+          </svg>
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="menu-btn" id="menuBtn" aria-label="Toggle sidebar" aria-expanded="true">
+          <svg><use href="#i-menu"/></svg>
+        </button>
+
+        <div class="breadcrumbs">
+          <span>IBVAP</span><b>/</b><span>Operations</span><b>/</b>
+          <strong id="breadcrumbFeature">Dashboard</strong>
+        </div>
+
+        <div class="top-actions">
+          <div class="system-status"><span></span>Active</div>
+          <div class="divider"></div>
+          <button class="icon-btn" id="notificationBtn" title="Notifications" aria-label="Notifications">
+            <svg><use href="#i-bell"/></svg><i></i>
+          </button>
+          <div class="top-avatar">AS</div>
+        </div>
+      </header>
+
+      <section class="content" id="content">
+        <div class="dashboard-grid" id="dashboardView">
+          <div class="left-column" id="detectionLeftColumn"></div>
+          <div class="right-column" id="detectionRightColumn"></div>
+        </div>
+
+        <div class="settings-view" id="settingsView" hidden>
+          <section class="settings-header card">
+            <div class="settings-heading">
+              <div class="settings-icon"><svg><use href="#i-settings"></use></svg></div>
+              <div>
+                <p class="eyebrow">SYSTEM CONFIGURATION</p>
+                <h1>Settings</h1>
+                <p>Manage interface preferences, camera configuration and operator controls.</p>
+              </div>
+            </div>
+            <span class="settings-status"><span></span>Configuration Ready</span>
+          </section>
+
+          <div class="settings-grid">
+            <section class="card settings-card">
+              <div class="settings-card-title"><svg><use href="#i-camera"></use></svg><div><h2>Camera Configuration</h2><p>Manage connected surveillance sources.</p></div></div>
+              <label class="setting-row"><span><strong>Camera status</strong><small>Keep connected cameras available to the platform</small></span><button class="switch active" type="button" aria-pressed="true"></button></label>
+              <label class="setting-row"><span><strong>Automatic camera refresh</strong><small>Refresh camera feeds when a connection changes</small></span><button class="switch active" type="button" aria-pressed="true"></button></label>
+              <div class="setting-select"><label>Default camera</label><select><option>CAM-04 — Perimeter Road</option><option>CAM-04B — Left Angle</option><option>CAM-04C — Right Angle</option><option>CAM-04D — Rear View</option></select></div>
+            </section>
+
+            <section class="card settings-card">
+              <div class="settings-card-title"><svg><use href="#i-bell"></use></svg><div><h2>Notifications</h2><p>Choose how operational alerts are presented.</p></div></div>
+              <label class="setting-row"><span><strong>Detection alerts</strong><small>Receive alerts for new detection events</small></span><button class="switch active" type="button" aria-pressed="true"></button></label>
+              <label class="setting-row"><span><strong>System notifications</strong><small>Receive status and connection updates</small></span><button class="switch" type="button" aria-pressed="false"></button></label>
+              <div class="setting-select"><label>Alert priority</label><select><option>High and Critical</option><option>All Events</option><option>Critical Only</option></select></div>
+            </section>
+
+            <section class="card settings-card">
+              <div class="settings-card-title"><svg><use href="#i-human"></use></svg><div><h2>Detection Preferences</h2><p>Control the presentation of intelligence events.</p></div></div>
+              <label class="setting-row"><span><strong>Person tracking</strong><small>Keep active person tracks visible on feeds</small></span><button class="switch active" type="button" aria-pressed="true"></button></label>
+              <label class="setting-row"><span><strong>Detection labels</strong><small>Display identification labels over detected objects</small></span><button class="switch active" type="button" aria-pressed="true"></button></label>
+              <div class="setting-select"><label>Evidence retention</label><select><option>30 days</option><option>14 days</option><option>90 days</option></select></div>
+            </section>
+
+            <section class="card settings-card">
+              <div class="settings-card-title"><svg><use href="#i-shield"></use></svg><div><h2>Security</h2><p>Operator session and access preferences.</p></div></div>
+              <label class="setting-row"><span><strong>Secure session</strong><small>Require authentication when the session expires</small></span><button class="switch active" type="button" aria-pressed="true"></button></label>
+              <label class="setting-row"><span><strong>Automatic session lock</strong><small>Lock the interface after inactivity</small></span><button class="switch active" type="button" aria-pressed="true"></button></label>
+              <div class="setting-select"><label>Lock after</label><select><option>15 minutes</option><option>30 minutes</option><option>60 minutes</option></select></div>
+            </section>
+          </div>
+
+          <div class="settings-actions">
+            <button class="secondary-action" id="resetSettings">Reset Changes</button>
+            <button class="primary-action" id="saveSettings">Save Settings</button>
+          </div>
+        </div>
+<div
+  class="module-view"
+  id="moduleView"
+  hidden
+></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">Action completed</div>
+  <script src="script.js"></script>
+</body>
+</html>

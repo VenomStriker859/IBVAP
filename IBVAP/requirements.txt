@@ -1,0 +1,14 @@
+# IBVAP runtime dependencies
+fastapi
+uvicorn
+opencv-python
+numpy
+torch
+ultralytics
+paddleocr
+paddlepaddle
+imageio-ffmpeg
+
+# Optional standalone module only (face_reco.py)
+# insightface
+# onnxruntime
